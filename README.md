@@ -3,7 +3,7 @@
 
 This is a PyTorch implementation of *Deep Supervised Graph Partitioning Model (DSGPM)* described in paper *Graph Neural Network Based Coarse-Grained Mapping Prediction*.
 
-*DSGPM* generates coarse-grained mapping (*i.e.*, graph partitioning) for molecular graph. To achieve this, we collect *Human-annotated Mappings (HAM)* dataset to annotate mappings (*i.e.*, graph partioning) of 1,180 molecular graphs. *DSGPM* learns mapping from *HAM* dataset to predict mappings for unseen molecular graphs.
+*DSGPM* generates coarse-grained mapping (*i.e.*, graph partitioning) for molecular graph. To achieve this, we collect *Human-annotated Mappings (HAM)* dataset to annotate mappings (*i.e.*, graph partioning) of 1206 molecular graphs. *DSGPM* learns mapping from *HAM* dataset to predict mappings for unseen molecular graphs.
 
 
 
