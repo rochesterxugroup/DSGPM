@@ -96,8 +96,7 @@ def main():
     if not os.path.exists(args.json_output_dir):
         os.mkdir(args.json_output_dir)
 
-    test_set = HAMPerFile(data_root=args.data_root, cycle_feat=args.use_cycle_feat,
-                             degree_feat=args.use_degree_feat, for_vis=True, automorphism=True)
+    test_set = HAMPerFile(data_root=args.data_root, automorphism=True)
 
     test_dataloader = DataListLoader(test_set, batch_size=1, num_workers=args.num_workers,
                                      pin_memory=True)
