@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import torch_geometric.nn as gnn
 from torch_scatter import scatter_mean
 
-from dataset.cg_data_py_geometric import ATOMS
+from dataset.ham import ATOMS
 NUM_ATOMS = len(ATOMS)
 
 

@@ -40,7 +40,7 @@ class HAMPerFile(Dataset):
                             {
                                 "cg":2,  # cg group_id (starts with 0)
                                 "element":"C",  # atom type
-                                "id":0  # fg id 
+                                "id":0  # fg id
                             },
                             {...}
                          ],
