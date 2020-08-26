@@ -14,9 +14,9 @@ from dataset.ham import ATOMS
 NUM_ATOMS = len(ATOMS)
 
 
-class CGNet(nn.Module):
+class DSGPM(nn.Module):
     def __init__(self, input_dim, hidden_dim, embedding_dim, args):
-        super(CGNet, self).__init__()
+        super(DSGPM, self).__init__()
         self.args = args
         self.bias = True
         if args is not None:

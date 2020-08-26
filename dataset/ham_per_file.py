@@ -8,8 +8,10 @@ import glob
 import json
 import torch
 import networkx as nx
+import numpy as np
 import torch.nn.functional as F
 
+from networkx.algorithms.cycles import cycle_basis
 from utils.automorphism_group import node_equal, edge_equal
 from torch_geometric.data import Data
 from torch.utils.data import Dataset
@@ -17,10 +19,12 @@ from .ham import ATOMS, BOND_TYPE_DICT
 
 
 class HAMPerFile(Dataset):
-    def __init__(self, data_root, automorphism=False):
+    def __init__(self, data_root, cycle_feat=False, degree_feat=False, automorphism=False):
         jsons_root = os.path.join(data_root, '*.json')
         self.json_file_path_lst = glob.glob(jsons_root)
         self.automorphism = automorphism
+        self.cycle_feat = cycle_feat
+        self.degree_feat = degree_feat
 
     def __getitem__(self, index):
         """
@@ -82,6 +86,23 @@ class HAMPerFile(Dataset):
         atom_types_tensor.scatter_(1, atom_types, 1)
 
         input_tensor = atom_types_tensor
+
+        # ======== degree ===========
+        if self.degree_feat:
+            degrees = graph.degree
+            degrees = np.array(degrees)[:, 1]
+            degrees = torch.tensor(degrees).float().unsqueeze(dim=-1) / 4
+            input_tensor = torch.cat([input_tensor, degrees], dim=1)
+
+        # ========= cycles ==========
+        if self.cycle_feat:
+            cycle_indicator_per_node = torch.zeros(len(fg_beads)).unsqueeze(-1)
+            cycle_lst = cycle_basis(graph)
+            if len(cycle_lst) > 0:
+                for idx_cycle, cycle in enumerate(cycle_lst):
+                    cycle = torch.tensor(cycle)
+                    cycle_indicator_per_node[cycle] = 1
+            input_tensor = torch.cat([input_tensor, cycle_indicator_per_node], dim=1)
 
         data.x = input_tensor
 

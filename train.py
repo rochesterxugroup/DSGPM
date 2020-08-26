@@ -12,7 +12,7 @@ import tqdm
 from option import arg_parse
 from dataset.ham import HAM
 from torch_geometric.data import DataLoader, DataListLoader
-from model.networks_geometric import CGNet
+from model.networks import DSGPM
 from model.losses import TripletLoss, PosPairMSE
 from utils.util import get_run_name
 from torch.utils.tensorboard import SummaryWriter
@@ -148,8 +148,8 @@ def main():
         test_dataloader = DataListLoader(test_set, batch_size=1, num_workers=0, sampler=test_sampler,
                                      pin_memory=True)
 
-        model = CGNet(args.input_dim, args.hidden_dim,
-                          args.output_dim, args=args).cuda()
+        model = DSGPM(args.input_dim, args.hidden_dim,
+                      args.output_dim, args=args).cuda()
 
         pos_pair_mse_criterion = PosPairMSE().cuda()
         triplet_criterion = TripletLoss(args.margin).cuda()
@@ -198,7 +198,7 @@ def main():
                     writer.add_scalar('test_edge_cut_f_score', test_edge_cut_f_score, e)
 
                 if not args.debug:
-                    state_dict = model.module.state_dict() if not isinstance(model, CGNet) else model.state_dict()
+                    state_dict = model.module.state_dict() if not isinstance(model, DSGPM) else model.state_dict()
                     torch.save(state_dict, os.path.join(ckpt_dir, 'fold_{}_{}.pth'.format(idx_fold+1, e)))
 
         print('[{}/{}] cross validation result:'.format(idx_fold+1, args.fold))

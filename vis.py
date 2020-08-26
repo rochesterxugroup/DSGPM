@@ -96,7 +96,7 @@ def main():
     args.devices = [int(device_id) for device_id in args.devices]
 
     # loading data
-    test_set = HAMPerFile(data_root=args.data_root, automorphism=False)
+    test_set = HAMPerFile(data_root=args.data_root, cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, automorphism=False)
     test_dataloader = DataListLoader(test_set, batch_size=1, num_workers=0, pin_memory=True)
 
     args.vis_path = os.path.join(args.vis_root, args.title)

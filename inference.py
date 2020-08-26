@@ -13,7 +13,7 @@ import copy
 
 from dataset.ham_per_file import HAMPerFile
 from option import arg_parse
-from model.networks_geometric import CGNet
+from model.networks import DSGPM
 from torch_geometric.data import DataListLoader
 from model.graph_cuts import graph_cuts
 from utils.post_processing import enforce_connectivity
@@ -96,12 +96,12 @@ def main():
     if not os.path.exists(args.json_output_dir):
         os.mkdir(args.json_output_dir)
 
-    test_set = HAMPerFile(data_root=args.data_root, automorphism=True)
+    test_set = HAMPerFile(data_root=args.data_root, cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, automorphism=True)
 
     test_dataloader = DataListLoader(test_set, batch_size=1, num_workers=args.num_workers,
                                      pin_memory=True)
 
-    model = CGNet(args.input_dim, args.hidden_dim,
+    model = DSGPM(args.input_dim, args.hidden_dim,
                   args.output_dim, args=args).cuda()
     ckpt = torch.load(args.pretrained_ckpt)
     model.load_state_dict(ckpt)
