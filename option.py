@@ -60,7 +60,7 @@ def arg_parse():
     parser.add_argument('--input_fc_bias', action='store_true')
     parser.add_argument('--start_eval_epoch', type=int, default=0)
     parser.add_argument('--weight_decay', type=float, default=0)
-    parser.add_argument('--num_cg_beads', type=int)
+    parser.add_argument('--num_cg_beads', nargs='+', type=int, help='number of CG beads. E.g., --num_cg_beads 2 3 4')
     parser.add_argument('--seed', type=int)
     parser.add_argument('--json_output_dir', type=str)
     parser.add_argument('--inference_method', choices=['dsgpm', 'spec_cluster', 'metis', 'graclus'], default='dsgpm')

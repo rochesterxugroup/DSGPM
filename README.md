@@ -62,7 +62,7 @@ To generate coarse-grained mapping (graph partitioning of molecular graph), plea
      --pretrained_ckpt /path/to/DSGPM.pth \
      --data_root /path/to/dataset/ \  # folder containing json files
      --json_output_dir /path/to/folder/for/output/json_files \
-     --num_cg_beads 5 # number of CG beads (graph partitions) of the generated mapping. If this option is not given, DSGPM will generate mapping in all possible number of CG beads (from 2 to number of atoms - 1).
+     --num_cg_beads 5 6 7 # number of CG beads (graph partitions) of the generated mapping. If this option is not given, DSGPM will generate mapping in all possible number of CG beads (from 2 to number of atoms - 1).
    ```
 
 
