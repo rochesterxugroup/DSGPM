@@ -36,7 +36,7 @@ class DSGPM(nn.Module):
         )
 
     def build_nnconv_layers(self, input_dim, hidden_dim, embedding_dim, layer=gnn.NNConv):
-        input_fc = nn.Linear(input_dim, hidden_dim, bias=self.args.input_fc_bias)
+        input_fc = nn.Linear(input_dim, hidden_dim, bias=False)
         if self.args.use_degree_feat:
             hidden_dim += 1
         if self.args.use_cycle_feat:

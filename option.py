@@ -57,7 +57,6 @@ def arg_parse():
     parser.add_argument('--pretrained_ckpt', type=str)
     parser.add_argument('--fold', type=int, default=5)
     parser.add_argument('--tb_log', action='store_true')
-    parser.add_argument('--input_fc_bias', action='store_true')
     parser.add_argument('--start_eval_epoch', type=int, default=0)
     parser.add_argument('--weight_decay', type=float, default=0)
     parser.add_argument('--num_cg_beads', nargs='+', type=int, help='number of CG beads. E.g., --num_cg_beads 2 3 4')
