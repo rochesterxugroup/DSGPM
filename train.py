@@ -42,7 +42,7 @@ def train(fold, epoch, train_loader, model, pos_pair_mse_criterion, triplet_crit
         data = data.to(torch.device(0))
         model.zero_grad()
 
-        fg_embed, cg_fg_ratio = model(data)
+        fg_embed = model(data)
 
         loss = 0
         pos_pair_loss = args.pos_pair_weight * pos_pair_mse_criterion(fg_embed, data.pos_pair_index)
@@ -84,7 +84,7 @@ def eval(fold, epoch, test_dataloader, model, args):
 
         max_num_cg_beads = gt_hard_assigns.max(axis=1) + 1
 
-        fg_embed, cg_fg_ratio = model(data)
+        fg_embed = model(data)
         dense_adj = torch.sparse.LongTensor(data.edge_index, data.no_bond_edge_attr, (num_nodes, num_nodes)).to_dense()
 
         for _ in range(args.test_shots):

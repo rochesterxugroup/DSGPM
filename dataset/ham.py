@@ -17,8 +17,9 @@ from torch.utils.data import Dataset
 from networkx.algorithms.cycles import cycle_basis
 from torch_geometric.data import Data
 from tqdm import tqdm
-
 from utils.automorphism_group import node_equal, edge_equal
+
+MASK_ATOM_INDEX = 0
 
 ATOMS = OrderedDict([('B', 10.81), ('C', 12.011), ('N', 14.007), ('O', 15.999), ('F', 18.998403163), ('Si', 28.085), ('P', 30.973761998), ('S', 32.06), ('Cl', 35.45), ('K', 39.0983), ('Fe', 55.845), ('Se', 78.971), ('Br', 79.904), ('Ru', 101.07), ('Sn', 118.71), ('I', 126.90447)])
 
@@ -26,9 +27,10 @@ BOND_TYPE_DICT = {1.0: 0, 1.5: 1, 2.0: 2, 3.0: 3, '-': 0, '/': 0, '\\': 0, ':': 
 
 
 class HAM(Dataset):
-    def __init__(self, data_root, dataset_type='train', for_vis=False, cycle_feat=False, degree_feat=False, cross_validation=False, automorphism=True):
+    def __init__(self, data_root, dataset_type='train', for_vis=False, cycle_feat=False, degree_feat=False, cross_validation=False, automorphism=True, transform=None):
         assert dataset_type in {'train', 'test'}
         self.dataset_type = dataset_type
+        self.transform = transform
         if not cross_validation:
             jsons_root = os.path.join(data_root, dataset_type, '*.json')
         else:
@@ -87,7 +89,6 @@ class HAM(Dataset):
                         mapping_lst.append(new_mapping)
                 self.smiles_cluster_idx_dict[smile] = mapping_lst
 
-
     def __getitem__(self, index):
         """
         get index-th data
@@ -122,7 +123,6 @@ class HAM(Dataset):
             }
         """
         data = Data()
-        data.cg_fg_ratio = len(json_data['cgnodes']) / len(json_data['nodes'])
 
         if 'smiles' not in json_data:
             smiles = os.path.splitext(os.path.basename(json_fpath))[0]
@@ -144,17 +144,14 @@ class HAM(Dataset):
         fg_beads: list = json_data['nodes']
         fg_beads.sort(key=lambda x: x['id'])
         atom_types = torch.LongTensor([list(ATOMS.keys()).index(bead['element']) for bead in fg_beads]).reshape(-1, 1)
-        atom_types_tensor = torch.zeros((len(atom_types), len(ATOMS)))
-        atom_types_tensor.scatter_(1, atom_types, 1)
-
-        input_tensor = atom_types_tensor
+        data.x = atom_types
 
         # ======== degree ===========
         if self.degree_feat:
             degrees = graph.degree
             degrees = np.array(degrees)[:, 1]
             degrees = torch.tensor(degrees).float().unsqueeze(dim=-1) / 4
-            input_tensor = torch.cat([input_tensor, degrees], dim=1)
+            data.degree_or_cycle_feat = degrees
 
         # ========= cycles ==========
         if self.cycle_feat:
@@ -164,9 +161,10 @@ class HAM(Dataset):
                 for idx_cycle, cycle in enumerate(cycle_lst):
                     cycle = torch.tensor(cycle)
                     cycle_indicator_per_node[cycle] = 1
-            input_tensor = torch.cat([input_tensor, cycle_indicator_per_node], dim=1)
-
-        data.x = input_tensor
+            if hasattr(data, 'degree_or_cycle_feat'):
+                data.degree_or_cycle_feat = torch.cat([data.degree_or_cycle_feat, cycle_indicator_per_node], dim=1)
+            else:
+                data.degree_or_cycle_feat = cycle_indicator_per_node
 
         edges = []
         bond_types = []
@@ -255,6 +253,9 @@ class HAM(Dataset):
             data.json = json_data
         if self.dataset_type == 'peptides_martini_prediction' or self.dataset_type == 'peptides' or self.dataset_type == 'ref_mappings':
             data.fname = os.path.splitext(os.path.basename(json_fpath))[0]
+
+        if self.transform is not None:
+            data = self.transform(data)
 
         return data
 

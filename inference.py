@@ -38,7 +38,7 @@ def eval(test_dataloader, model, args):
         data.batch = torch.zeros(num_nodes).long()
         data = data.to(torch.device(0))
         edge_index_cpu = data.edge_index.cpu().numpy()
-        fg_embed, pred_cg_fg_ratio = model(data)
+        fg_embed = model(data)
         dense_adj = torch.sparse.LongTensor(data.edge_index, data.no_bond_edge_attr, (num_nodes, num_nodes)).to_dense()
 
         if args.num_cg_beads is None:

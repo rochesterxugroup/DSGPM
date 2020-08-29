@@ -59,7 +59,6 @@ class HAMPerFile(Dataset):
             }
         """
         data = Data()
-        data.cg_fg_ratio = len(json_data['cgnodes']) / len(json_data['nodes'])
 
         if 'smiles' not in json_data:
             smiles = os.path.splitext(os.path.basename(json_fpath))[0]
@@ -82,17 +81,14 @@ class HAMPerFile(Dataset):
         fg_beads.sort(key=lambda x: x['id'])
         # atom_types = torch.LongTensor([ATOM_TYPES.index(bead['element']) for bead in fg_beads]).reshape(-1, 1)
         atom_types = torch.LongTensor([list(ATOMS.keys()).index(bead['element']) for bead in fg_beads]).reshape(-1, 1)
-        atom_types_tensor = torch.zeros((len(atom_types), len(ATOMS)))
-        atom_types_tensor.scatter_(1, atom_types, 1)
-
-        input_tensor = atom_types_tensor
+        data.x = atom_types
 
         # ======== degree ===========
         if self.degree_feat:
             degrees = graph.degree
             degrees = np.array(degrees)[:, 1]
             degrees = torch.tensor(degrees).float().unsqueeze(dim=-1) / 4
-            input_tensor = torch.cat([input_tensor, degrees], dim=1)
+            data.degree_or_cycle_feat = degrees
 
         # ========= cycles ==========
         if self.cycle_feat:
@@ -102,9 +98,10 @@ class HAMPerFile(Dataset):
                 for idx_cycle, cycle in enumerate(cycle_lst):
                     cycle = torch.tensor(cycle)
                     cycle_indicator_per_node[cycle] = 1
-            input_tensor = torch.cat([input_tensor, cycle_indicator_per_node], dim=1)
-
-        data.x = input_tensor
+            if hasattr(data, 'degree_or_cycle_feat'):
+                data.degree_or_cycle_feat = torch.cat([data.degree_or_cycle_feat, cycle_indicator_per_node], dim=1)
+            else:
+                data.degree_or_cycle_feat = cycle_indicator_per_node
 
         edges = []
         bond_types = []

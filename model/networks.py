@@ -8,9 +8,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch_geometric.nn as gnn
-from torch_scatter import scatter_mean
-
 from dataset.ham import ATOMS
+from dataset.ham import MASK_ATOM_INDEX
 NUM_ATOMS = len(ATOMS)
 
 
@@ -25,18 +24,12 @@ class DSGPM(nn.Module):
         self.input_fc, self.nn_conv, self.gru, self.output_fc = self.build_nnconv_layers(input_dim, hidden_dim,
                                                                                          embedding_dim,
                                                                                          layer=gnn.NNConv)
-        if self.args.use_degree_feat:
-            input_dim += 1
-        if self.args.use_cycle_feat:
-            input_dim += 1
-
-        self.fc_pred_cg_beads_ratio = nn.Sequential(
-            nn.Linear(embedding_dim + input_dim, 1),
-            nn.Sigmoid()
-        )
 
     def build_nnconv_layers(self, input_dim, hidden_dim, embedding_dim, layer=gnn.NNConv):
-        input_fc = nn.Linear(input_dim, hidden_dim, bias=False)
+        if self.args.use_mask_embed:
+            input_fc = nn.Embedding(input_dim + 1, hidden_dim, padding_idx=MASK_ATOM_INDEX)
+        else:
+            input_fc = nn.Embedding(input_dim, hidden_dim)
         if self.args.use_degree_feat:
             hidden_dim += 1
         if self.args.use_cycle_feat:
@@ -55,13 +48,14 @@ class DSGPM(nn.Module):
         )
         return input_fc, nn_conv, gru, output_fc
 
-    def nn_conv_forward(self, x, edge_index, edge_attr, batch):
+    def forward(self, data):
+        x, edge_index = data.x, data.edge_index
+        edge_attr = data.edge_attr
         if self.args.use_cycle_feat or self.args.use_degree_feat:
-            x, degree_or_cycle_feat = x[:, :NUM_ATOMS], x[:, NUM_ATOMS:]
-            out = F.relu(self.input_fc(x))
-            out = torch.cat([out, degree_or_cycle_feat], dim=1)
+            out = F.relu(self.input_fc(x)).squeeze(1)
+            out = torch.cat([out, data.degree_or_cycle_feat], dim=1)
         else:
-            out = F.relu(self.input_fc(x))
+            out = F.relu(self.input_fc(x)).squeeze(1)
         h = out.unsqueeze(0)
 
         for i in range(self.args.num_nn_iter):
@@ -70,20 +64,17 @@ class DSGPM(nn.Module):
             out = out.squeeze(0)
 
         out = self.output_fc(out)
-        feat_lst = [out, x]
+
+        if self.args.use_mask_embed:
+            atom_types_tensor = torch.zeros((x.shape[0], len(ATOMS) + 1), device=x.device)
+        else:
+            atom_types_tensor = torch.zeros((x.shape[0], len(ATOMS)), device=x.device)
+        atom_types_tensor.scatter_(1, x, 1)
+
+        feat_lst = [out, atom_types_tensor]
         if self.args.use_cycle_feat or self.args.use_degree_feat:
-            feat_lst.append(degree_or_cycle_feat)
+            feat_lst.append(data.degree_or_cycle_feat)
         out = torch.cat(feat_lst, dim=1)
-        out = F.normalize(out)
+        fg_embed = F.normalize(out)
 
-        readout = scatter_mean(out, batch, dim=0)
-        cg_fg_ratio = self.fc_pred_cg_beads_ratio(readout)
-        return out, cg_fg_ratio
-
-    def forward(self, data):
-        atom_types, edge_index = data.x, data.edge_index
-
-        edge_attr = data.edge_attr
-        fg_embed, cg_fg_ratio = self.nn_conv_forward(atom_types, edge_index, edge_attr, data.batch)
-
-        return fg_embed, cg_fg_ratio
+        return fg_embed
