@@ -66,6 +66,7 @@ def arg_parse():
     parser.add_argument('--svg', action='store_true')
     parser.add_argument('--vis_root', type=str)
     parser.add_argument('--mask_ratio', type=float, default=0.15)
+    parser.add_argument('--use_mask_embed', action='store_true')
 
     parser.set_defaults(cuda='0',
                         lr=1e-3,
