@@ -67,6 +67,7 @@ def arg_parse():
     parser.add_argument('--vis_root', type=str)
     parser.add_argument('--mask_ratio', type=float, default=0.15)
     parser.add_argument('--use_mask_embed', action='store_true')
+    parser.add_argument('--no_automorphism', action='store_false', dest='automorphism')
 
     parser.set_defaults(cuda='0',
                         lr=1e-3,
