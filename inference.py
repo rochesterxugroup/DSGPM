@@ -47,24 +47,24 @@ def eval(test_dataloader, model, args):
             iter_num_cg_beads = args.num_cg_beads
 
         for num_cg_bead in iter_num_cg_beads:
-            try:
-                if args.inference_method == 'dsgpm':
-                    hard_assign, _ = graph_cuts(fg_embed, dense_adj, num_cg_bead, args.bandwidth)
-                    hard_assign = enforce_connectivity(hard_assign, edge_index_cpu)
-                elif args.inference_method == 'spec_cluster':
-                    hard_assign = graph_cuts_with_adj(dense_adj, num_cg_bead)
-                    hard_assign = enforce_connectivity(hard_assign, edge_index_cpu)
-                elif args.inference_method == 'metis':
-                    hard_assign = metis.part_graph(data.graph, nparts=num_cg_bead)[1]
-                elif args.inference_method == 'graclus':
-                    hard_assign = graclus(data.edge_index.cpu()).cpu()
-                    hard_assign = enforce_connectivity(hard_assign, edge_index_cpu)
-                actual_num_cg = max(hard_assign) + 1
-                if actual_num_cg != num_cg_bead:
-                    print('warning: actual vs. expected: {} vs. {}'.format(actual_num_cg, num_cg_bead))
-            except RuntimeError:
-                print('error under #cg: {}'.format(num_cg_bead))
-                continue
+            # try:
+            if args.inference_method == 'dsgpm':
+                hard_assign, _ = graph_cuts(fg_embed, dense_adj, num_cg_bead, args.bandwidth, device=args.device_for_affinity_matrix)
+                hard_assign = enforce_connectivity(hard_assign, edge_index_cpu)
+            elif args.inference_method == 'spec_cluster':
+                hard_assign = graph_cuts_with_adj(dense_adj, num_cg_bead)
+                hard_assign = enforce_connectivity(hard_assign, edge_index_cpu)
+            elif args.inference_method == 'metis':
+                hard_assign = metis.part_graph(data.graph, nparts=num_cg_bead)[1]
+            elif args.inference_method == 'graclus':
+                hard_assign = graclus(data.edge_index.cpu()).cpu()
+                hard_assign = enforce_connectivity(hard_assign, edge_index_cpu)
+            actual_num_cg = max(hard_assign) + 1
+            if actual_num_cg != num_cg_bead:
+                print('warning: actual vs. expected: {} vs. {}'.format(actual_num_cg, num_cg_bead))
+            # except RuntimeError:
+            #     print('error under #cg: {}'.format(num_cg_bead))
+            #     continue
 
             result_json = copy.deepcopy(json_data)
             for atom_idx, cg_idx in enumerate(hard_assign):
@@ -94,7 +94,7 @@ def main():
     args.json_output_dir = os.path.join(args.json_output_dir, args.inference_method)
 
     if not os.path.exists(args.json_output_dir):
-        os.mkdir(args.json_output_dir)
+        os.makedirs(args.json_output_dir)
 
     test_set = HAMPerFile(data_root=args.data_root, cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, automorphism=args.automorphism)
 

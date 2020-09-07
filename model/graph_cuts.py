@@ -9,8 +9,8 @@ import torch.nn.functional as F
 from sklearn.cluster import spectral_clustering
 
 
-def graph_cuts(fg_embed, adj, num_cg, bandwidth=1.0, kernel='rbf'):
-    affinity = compute_affinity(fg_embed, adj, bandwidth, kernel)
+def graph_cuts(fg_embed, adj, num_cg, bandwidth=1.0, kernel='rbf', device=torch.device(0)):
+    affinity = compute_affinity(fg_embed, adj, bandwidth, kernel, device)
 
     pred_cg_idx = spectral_clustering(affinity.cpu().numpy(), n_clusters=num_cg, assign_labels='discretize')
     return pred_cg_idx, affinity
@@ -21,10 +21,11 @@ def graph_cuts_with_adj(adj, num_cg):
     return pred_cg_idx
 
 
-def compute_affinity(fg_embed, adj, bandwidth=1.0, kernel='rbf'):
+def compute_affinity(fg_embed, adj, bandwidth=1.0, kernel='rbf', device=torch.device(0)):
     if kernel == 'rbf':
         n, d = fg_embed.shape
-        pairwise_dist = torch.norm(fg_embed.reshape(n, 1, d) - fg_embed.reshape(1, n, d), dim=2)
+        fg_embed = fg_embed.to(device)
+        pairwise_dist = torch.norm(fg_embed.reshape(n, 1, d) - fg_embed.reshape(1, n, d), dim=2).to(torch.device(0))
 
         pairwise_dist = pairwise_dist ** 2
         affinity = torch.exp(-pairwise_dist / (2 * bandwidth ** 2))

@@ -68,6 +68,7 @@ def arg_parse():
     parser.add_argument('--mask_ratio', type=float, default=0.15)
     parser.add_argument('--use_mask_embed', action='store_true')
     parser.add_argument('--no_automorphism', action='store_false', dest='automorphism')
+    parser.add_argument('--device_for_affinity_matrix', type=str, choices=['cpu', 'cuda'], default='cuda')
 
     parser.set_defaults(cuda='0',
                         lr=1e-3,
@@ -81,6 +82,8 @@ def arg_parse():
     args = parser.parse_args()
     input_dim = len(ATOMS)
     args.input_dim = input_dim
+
+    args.device_for_affinity_matrix = torch.device(args.device_for_affinity_matrix)
 
     if args.seed is not None:
         torch.manual_seed(args.seed)
