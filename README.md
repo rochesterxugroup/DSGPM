@@ -100,6 +100,10 @@ python train.py \
 
 A user can convert molecules saved in PDB format to JSON format using [convert_to_json.py](https://github.com/rochesterxugroup/DSGPM/blob/cg_pdb/generate_input_files/convert_to_json.py)
 
+```
+python generate_input_files/convert_to_json.py --pdb /path/to/pdb/containing/folder
+```
+
 
 ## Reference
 
