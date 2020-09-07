@@ -49,7 +49,7 @@ def eval(test_dataloader, model, args):
         for num_cg_bead in iter_num_cg_beads:
             # try:
             if args.inference_method == 'dsgpm':
-                hard_assign, _ = graph_cuts(fg_embed, dense_adj, num_cg_bead, args.bandwidth, device=args.device_for_affinity_matrix)
+                hard_assign, _ = graph_cuts(fg_embed, data.edge_index, num_cg_bead, args.bandwidth, device=args.device_for_affinity_matrix)
                 hard_assign = enforce_connectivity(hard_assign, edge_index_cpu)
             elif args.inference_method == 'spec_cluster':
                 hard_assign = graph_cuts_with_adj(dense_adj, num_cg_bead)

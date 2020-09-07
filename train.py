@@ -92,7 +92,7 @@ def eval(fold, epoch, test_dataloader, model, args):
             best_precision, best_recall, best_f_score = -1, 0, 0, 0
 
             for anno_idx, gt_hard_assign in enumerate(gt_hard_assigns):
-                hard_assign, _ = graph_cuts(fg_embed, dense_adj, max_num_cg_beads[anno_idx], args.bandwidth)
+                hard_assign, _ = graph_cuts(fg_embed, data.edge_index, max_num_cg_beads[anno_idx], args.bandwidth)
                 try:
                     hard_assign = enforce_connectivity(hard_assign, edge_index_cpu)
                 except:
