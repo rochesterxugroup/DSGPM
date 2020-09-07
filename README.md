@@ -96,6 +96,18 @@ python train.py \
 	--tb_root /path/to/store/tensorboard/file
 ```
 
+## Generate input files
+
+A user can convert molecules saved in PDB format or a SMILES to JSON format using [convert_to_json.py](https://github.com/rochesterxugroup/DSGPM/blob/cg_pdb/generate_input_files/convert_to_json.py). 
+This script currently reads only SMILES given in a text file. 
+
+
+```
+python generate_input_files/convert_to_json.py --pdb /path/to/pdb/containing/folder #for PDB to json conversion
+
+python generate_input_files/convert_to_json.py --smiles /path/to/SMILES/containing/textFile #for SMILES to json conversion
+
+```
 
 
 ## Reference
