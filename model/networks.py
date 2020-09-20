@@ -8,9 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch_geometric.nn as gnn
-from dataset.ham import ATOMS
-from dataset.ham import MASK_ATOM_INDEX
-NUM_ATOMS = len(ATOMS)
+from dataset import MASK_ATOM_INDEX
 
 
 class DSGPM(nn.Module):
@@ -24,6 +22,7 @@ class DSGPM(nn.Module):
         self.input_fc, self.nn_conv, self.gru, self.output_fc = self.build_nnconv_layers(input_dim, hidden_dim,
                                                                                          embedding_dim,
                                                                                          layer=gnn.NNConv)
+        self.num_atoms = args.num_atoms
 
     def build_nnconv_layers(self, input_dim, hidden_dim, embedding_dim, layer=gnn.NNConv):
         if self.args.use_mask_embed:
@@ -66,9 +65,9 @@ class DSGPM(nn.Module):
         out = self.output_fc(out)
 
         if self.args.use_mask_embed:
-            atom_types_tensor = torch.zeros((x.shape[0], len(ATOMS) + 1), device=x.device)
+            atom_types_tensor = torch.zeros((x.shape[0], self.num_atoms + 1), device=x.device)
         else:
-            atom_types_tensor = torch.zeros((x.shape[0], len(ATOMS)), device=x.device)
+            atom_types_tensor = torch.zeros((x.shape[0], self.num_atoms), device=x.device)
         atom_types_tensor.scatter_(1, x, 1)
 
         feat_lst = [out, atom_types_tensor]

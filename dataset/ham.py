@@ -18,22 +18,21 @@ from networkx.algorithms.cycles import cycle_basis
 from torch_geometric.data import Data
 from tqdm import tqdm
 from utils.automorphism_group import node_equal, edge_equal
+from . import BOND_TYPE_DICT
 
-MASK_ATOM_INDEX = 0
-
-ATOMS = OrderedDict([('B', 10.81), ('C', 12.011), ('N', 14.007), ('O', 15.999), ('F', 18.998403163), ('Si', 28.085), ('P', 30.973761998), ('S', 32.06), ('Cl', 35.45), ('K', 39.0983), ('Fe', 55.845), ('Se', 78.971), ('Br', 79.904), ('Ru', 101.07), ('Sn', 118.71), ('I', 126.90447)])
+# no name for self supervised training
 # ATOMS = OrderedDict([('B', 10.81), ('C', 12.011), ('N', 14.007), ('O', 15.999), ('F', 18.998403163), ('Si', 28.085), ('P', 30.973761998), ('S', 32.06), ('Cl', 35.45), ('K', 39.0983), ('Fe', 55.845), ('Se', 78.971), ('Br', 79.904), ('Ru', 101.07), ('Sn', 118.71), ('I', 126.90447), ('Al', 26.9815385), ('Zn', 65.38), ('As', 74.921595), ('Te', 127.6)])
-
-BOND_TYPE_DICT = {1.0: 0, 1.5: 1, 2.0: 2, 3.0: 3, '-': 0, '/': 0, '\\': 0, ':': 1, '=': 2, '#': 3}
 
 
 class HAM(Dataset):
-    def __init__(self, data_root, dataset_type='train', for_vis=False, cycle_feat=False, degree_feat=False, cross_validation=False, automorphism=True, transform=None):
-        assert dataset_type in {'train', 'test'}
-        self.dataset_type = dataset_type
+    ATOMS = ['B', 'C', 'N', 'O', 'F', 'Si', 'P', 'S', 'Cl', 'K', 'Fe', 'Se', 'Br', 'Ru', 'Sn', 'I']
+
+    def __init__(self, data_root, split='train', for_vis=False, cycle_feat=False, degree_feat=False, cross_validation=False, automorphism=True, transform=None):
+        assert split in {'train', 'test'}
+        self.split = split
         self.transform = transform
         if not cross_validation:
-            jsons_root = os.path.join(data_root, dataset_type, '*.json')
+            jsons_root = os.path.join(data_root, split, '*.json')
         else:
             jsons_root = os.path.join(data_root, '*.json')
         self.json_file_path_lst = glob.glob(jsons_root)
@@ -144,7 +143,7 @@ class HAM(Dataset):
         # ========== load atom types ==========
         fg_beads: list = json_data['nodes']
         fg_beads.sort(key=lambda x: x['id'])
-        atom_types = torch.LongTensor([list(ATOMS.keys()).index(bead['element']) for bead in fg_beads]).reshape(-1, 1)
+        atom_types = torch.LongTensor([HAM.ATOMS.index(bead['element']) for bead in fg_beads]).reshape(-1, 1)
         data.x = atom_types
 
         # ======== degree ===========
@@ -184,15 +183,15 @@ class HAM(Dataset):
         # if self.dataset_type == 'test' or self.for_vis:
         multi_anno_cluster_idx = self.smiles_cluster_idx_dict[smiles]
         multi_anno_cluster_idx = torch.cat(multi_anno_cluster_idx, dim=0)  # num_annotation x num_nodes
-        if self.dataset_type == 'train':
+        if self.split == 'train':
             rand_anno_idx = random.randrange(len(multi_anno_cluster_idx))
             multi_anno_cluster_idx = multi_anno_cluster_idx[rand_anno_idx]
         data.y = multi_anno_cluster_idx
 
-        if self.for_vis or self.dataset_type == 'test':
+        if self.for_vis or self.split == 'test':
             data.graph = graph
             # remove triplet_idx in for vis
-        elif self.dataset_type == 'train':
+        elif self.split == 'train':
             # ========== triplet samples ==========
             # cg_node_indices_with_two_or_more_fg_nodes = [idx for idx, x in enumerate(json_data['cgnodes']) if len(x) > 1]
             # ========== get fg adj ==========
@@ -250,9 +249,9 @@ class HAM(Dataset):
             data.triplet_index = triplet_idx
             data.pos_pair_index = pos_pairs
 
-        if self.dataset_type == 'for_simulation' or self.dataset_type == 'corona' or self.dataset_type == 'peptides' or self.dataset_type == 'peptides_martini_prediction' or self.dataset_type == 'ref_mappings':
+        if self.split == 'for_simulation' or self.split == 'corona' or self.split == 'peptides' or self.split == 'peptides_martini_prediction' or self.split == 'ref_mappings':
             data.json = json_data
-        if self.dataset_type == 'peptides_martini_prediction' or self.dataset_type == 'peptides' or self.dataset_type == 'ref_mappings':
+        if self.split == 'peptides_martini_prediction' or self.split == 'peptides' or self.split == 'ref_mappings':
             data.fname = os.path.splitext(os.path.basename(json_fpath))[0]
 
         if self.transform is not None:

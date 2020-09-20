@@ -6,7 +6,7 @@
 import random
 import torch
 
-from dataset.ham import MASK_ATOM_INDEX
+from dataset import MASK_ATOM_INDEX
 
 
 class MaskAtomType(object):

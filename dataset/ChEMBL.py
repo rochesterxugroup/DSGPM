@@ -3,29 +3,36 @@
 #  Written by Zhiheng Li
 #  Email: zhiheng.li@rochester.edu
 
+# ChEMBL
+
 import os
-import glob
 import json
 import torch
-import networkx as nx
 import numpy as np
+import networkx as nx
+import random
 import torch.nn.functional as F
 
-from networkx.algorithms.cycles import cycle_basis
-from utils.automorphism_group import node_equal, edge_equal
-from torch_geometric.data import Data
 from torch.utils.data import Dataset
+from networkx.algorithms.cycles import cycle_basis
+from torch_geometric.data import Data
 from . import BOND_TYPE_DICT
-from dataset.ham import HAM
 
 
-class HAMPerFile(Dataset):
-    ATOMS = HAM.ATOMS
+class ChEMBL(Dataset):
+    ATOMS = ['B', 'C', 'N', 'O', 'F', 'Al', 'Si', 'P', 'S', 'Cl', 'Zn', 'As', 'Se', 'Br', 'Te', 'I']
 
-    def __init__(self, data_root, cycle_feat=False, degree_feat=False, automorphism=False):
-        jsons_root = os.path.join(data_root, '*.json')
-        self.json_file_path_lst = glob.glob(jsons_root)
-        self.automorphism = automorphism
+    def __init__(self, data_root, split_index_folder, split='train', for_vis=False, cycle_feat=False, degree_feat=False, transform=None):
+        assert split in {'train', 'val', 'test'}
+        self.split = split
+        self.transform = transform
+        split_file = os.path.join(split_index_folder, '{}.txt'.format(split))
+        assert os.path.exists(split_file)
+        with open(split_file) as f:
+            json_fname_lst = f.readlines()
+        json_fname_lst = [line.strip() for line in json_fname_lst]
+        self.json_file_path_lst = [os.path.join(data_root, fname) for fname in json_fname_lst]
+        self.for_vis = for_vis
         self.cycle_feat = cycle_feat
         self.degree_feat = degree_feat
 
@@ -36,7 +43,6 @@ class HAMPerFile(Dataset):
         :return: atom_types, fg_adj, cg_adj_gt, mapping_op_gt, atomic_weight
         """
         json_fpath = self.json_file_path_lst[index]
-
         with open(json_fpath) as f:
             json_data = json.load(f)
         """
@@ -47,7 +53,7 @@ class HAMPerFile(Dataset):
                             {
                                 "cg":2,  # cg group_id (starts with 0)
                                 "element":"C",  # atom type
-                                "id":0  # fg id
+                                "id":0  # fg id 
                             },
                             {...}
                          ],
@@ -75,15 +81,14 @@ class HAMPerFile(Dataset):
         for edge in json_data['edges']:
             bond_type = edge['bondtype']
             if isinstance(bond_type, str):
-                assert bond_type in {'-', '='}
-                bond_type = {'-': 1.0, '=': 2.0}
+                assert bond_type in set(BOND_TYPE_DICT.keys())
+                bond_type = {'-': 1.0, '/': 1.0, '\\': 1.0, ':': 1.5, '=': 2.0, '#': 3.0}[bond_type]
             graph.add_edge(edge['source'], edge['target'], bond_type=bond_type)
 
         # ========== load atom types ==========
         fg_beads: list = json_data['nodes']
         fg_beads.sort(key=lambda x: x['id'])
-        # atom_types = torch.LongTensor([ATOM_TYPES.index(bead['element']) for bead in fg_beads]).reshape(-1, 1)
-        atom_types = torch.LongTensor([list(ATOMS.keys()).index(bead['element']) for bead in fg_beads]).reshape(-1, 1)
+        atom_types = torch.LongTensor([ChEMBL.ATOMS.index(bead['element']) for bead in fg_beads]).reshape(-1, 1)
         data.x = atom_types
 
         # ======== degree ===========
@@ -115,29 +120,14 @@ class HAMPerFile(Dataset):
             bond_types.append(BOND_TYPE_DICT[x['bondtype']])  # add bond types for both directions
         data.edge_index = torch.tensor(edges).long().t()
         data.no_bond_edge_attr = torch.ones(data.edge_index.shape[1])
-        data.edge_attr = F.one_hot(torch.tensor(bond_types, dtype=torch.long), num_classes=4).float()
+        data.edge_attr = F.one_hot(torch.tensor(bond_types, dtype=torch.long), num_classes=4).float()  # hard code bond types to 4 types
         assert data.edge_attr.shape == (len(bond_types), 4)
 
-        # ========== load ground truth ==========
-        assert len(atom_types) == len(json_data['nodes'])
-        original_mapping = self.compute_cluster_idx(json_data)
-        if self.automorphism:
-            gm = nx.isomorphism.GraphMatcher(graph, graph,
-                                             node_match=node_equal,
-                                             edge_match=edge_equal)
-            mapping_lst = []
-            for node_mapping in gm.isomorphisms_iter():
-                key_value_lst = torch.tensor(list(node_mapping.items())).transpose(1, 0)
-                new_mapping = original_mapping.clone()
-                new_mapping[key_value_lst[0]] = new_mapping[key_value_lst[1]]
-                mapping_lst.append(new_mapping)
-            data.y = torch.stack(mapping_lst)
-        else:
-            data.y = original_mapping
+        if self.for_vis or self.split == 'test':
+            data.graph = graph
 
-        data.graph = graph
-        data.json = json_data
-        data.fname = os.path.splitext(os.path.basename(json_fpath))[0]
+        if self.transform is not None:
+            data = self.transform(data)
 
         return data
 

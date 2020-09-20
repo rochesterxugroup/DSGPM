@@ -101,7 +101,7 @@ def main():
     test_dataloader = DataListLoader(test_set, batch_size=1, num_workers=args.num_workers,
                                      pin_memory=True)
 
-    model = DSGPM(args.input_dim, args.hidden_dim,
+    model = DSGPM(args.num_atoms, args.hidden_dim,
                   args.output_dim, args=args).cuda()
     ckpt = torch.load(args.pretrained_ckpt)
     model.load_state_dict(ckpt)

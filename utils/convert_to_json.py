@@ -3,13 +3,12 @@
 #  Written by Geemi Wellawatte
 #  Email: gwellawa@rochester.edu
 
-import rdkit
 import json
-import numpy as np
 import argparse
-from rdkit import Chem
 import os
 import re
+
+from rdkit import Chem
 from rdkit.Chem import AllChem
 
 

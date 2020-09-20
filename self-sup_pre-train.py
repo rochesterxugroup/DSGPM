@@ -10,10 +10,9 @@ import tqdm
 import itertools
 
 from option import arg_parse
-from dataset.ham import HAM, ATOMS
+import dataset
 from torch_geometric.data import DataLoader
 from model.networks import DSGPM
-from model.losses import TripletLoss, PosPairMSE
 from utils.util import get_run_name
 from torch.utils.tensorboard import SummaryWriter
 
@@ -29,21 +28,23 @@ simplefilter(action='ignore', category=UndefinedMetricWarning)
 class Trainer:
     def __init__(self, args):
         self.args = args
-        train_set = HAM(data_root=args.data_root, dataset_type='train', cycle_feat=args.use_cycle_feat,
-                        degree_feat=args.use_degree_feat, cross_validation=True, automorphism=not args.debug,
-                        transform=MaskAtomType(args.mask_ratio))
+        assert args.split_index_folder is not None
+        train_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split_index_folder=args.split_index_folder,
+                                                            split='train', cycle_feat=args.use_cycle_feat,
+                                                            degree_feat=args.use_degree_feat,
+                                                            transform=MaskAtomType(args.mask_ratio))
 
         self.train_loader = DataLoader(train_set, batch_size=args.batch_size,
                                       num_workers=args.num_workers, pin_memory=True)
 
-        self.model = DSGPM(args.input_dim, args.hidden_dim,
+        self.model = DSGPM(args.num_atoms, args.hidden_dim,
                       args.output_dim, args=args).cuda()
-        final_feat_dim = args.output_dim + len(ATOMS) + 1  # TODO confirm number of atom types
+        final_feat_dim = args.output_dim + args.num_atoms + 1
         if self.args.use_cycle_feat:
             final_feat_dim += 1
         if self.args.use_degree_feat:
             final_feat_dim += 1
-        self.atom_type_classifier = torch.nn.Linear(final_feat_dim, len(ATOMS)).cuda()  # TODO confirm number of atom types
+        self.atom_type_classifier = torch.nn.Linear(final_feat_dim, args.num_atoms).cuda()
         self.criterion = torch.nn.CrossEntropyLoss()
 
         # setup optimizer

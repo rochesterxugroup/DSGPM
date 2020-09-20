@@ -7,15 +7,16 @@ import argparse
 import random
 import numpy as np
 import torch
-
-from dataset.ham import ATOMS
+import dataset
 
 
 def arg_parse():
     parser = argparse.ArgumentParser('Deep Supervised Graph Partitioning Model (DSGPM)')
     parser.add_argument('--title', type=str, default='CG')
+    parser.add_argument('--dataset', type=str, default='HAM', choices=['HAM', 'ChEMBL'])
     parser.add_argument('--data_root', dest='data_root',
                         help='Directory where benchmark is located', required=True)
+    parser.add_argument('--split_index_folder', type=str)
     parser.add_argument('--tb_root',
                         help='Tensorboard log directory')
     parser.add_argument('--ckpt', type=str)
@@ -28,8 +29,6 @@ def arg_parse():
                         help='Number of epochs to train.')
     parser.add_argument('--num_workers', dest='num_workers', type=int,
                         help='Number of workers to load data.')
-    parser.add_argument('--input_dim', dest='input_dim', type=int,
-                        help='Input feature dimension')
     parser.add_argument('--hidden_dim', dest='hidden_dim', type=int,
                         help='Hidden dimension')
     parser.add_argument('--output_dim', dest='output_dim', type=int,
@@ -80,8 +79,8 @@ def arg_parse():
                         dropout=0.0)
 
     args = parser.parse_args()
-    input_dim = len(ATOMS)
-    args.input_dim = input_dim
+    num_atoms = dataset.get_num_atoms_by_dataset(args.dataset)
+    args.num_atoms = num_atoms
 
     args.device_for_affinity_matrix = torch.device(args.device_for_affinity_matrix)
 

@@ -8,15 +8,14 @@ import torch
 import torch.optim as optim
 import random
 import tqdm
+import dataset
 
 from option import arg_parse
-from dataset.ham import HAM
 from torch_geometric.data import DataLoader, DataListLoader
 from model.networks import DSGPM
 from model.losses import TripletLoss, PosPairMSE
 from utils.util import get_run_name
 from torch.utils.tensorboard import SummaryWriter
-
 from torch.utils.data.sampler import SubsetRandomSampler
 from utils.stat import AverageMeter, FoldEpochMat
 from utils.post_processing import enforce_connectivity, edge_cut_prec_recall_fscore
@@ -122,8 +121,8 @@ def main():
     assert args.ckpt is not None, '--ckpt is required'
     args.devices = [int(device_id) for device_id in args.devices.split(',')]
 
-    train_set = HAM(data_root=args.data_root, dataset_type='train', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=True)
-    test_set = HAM(data_root=args.data_root, dataset_type='test', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=True)
+    train_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split='train', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=True)
+    test_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split='test', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=True)
     assert len(train_set) == len(test_set)
 
     indices = list(range(len(train_set)))
