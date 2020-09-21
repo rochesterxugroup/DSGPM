@@ -21,6 +21,8 @@ from . import BOND_TYPE_DICT
 
 class ChEMBL(Dataset):
     ATOMS = ['B', 'C', 'N', 'O', 'F', 'Al', 'Si', 'P', 'S', 'Cl', 'Zn', 'As', 'Se', 'Br', 'Te', 'I']
+    FREQUENCY = {'C': 39563488, 'N': 6113034, 'O': 6278194, 'S': 711604, 'Cl': 406332, 'F': 700548, 'Br': 84706, 'P': 40590,
+                 'Se': 2290, 'B': 3374, 'I': 12108, 'Si': 3269, 'Te': 103, 'As': 205, 'Zn': 4, 'Al': 12}
 
     def __init__(self, data_root, split_index_folder, split='train', for_vis=False, cycle_feat=False, degree_feat=False, transform=None):
         assert split in {'train', 'val', 'test'}
@@ -135,10 +137,8 @@ class ChEMBL(Dataset):
         return len(self.json_file_path_lst)
 
     @staticmethod
-    def compute_cluster_idx(json_data):
-        node_cluster_index = -1 * torch.ones((len(json_data['nodes']),)).long()
-        for node in json_data['nodes']:
-            fg_id, cg_id = node['id'], node['cg']
-            node_cluster_index[fg_id] = cg_id
-        assert torch.all(node_cluster_index >= 0)
-        return node_cluster_index
+    def compute_cls_weight():
+        freq_lst = [ChEMBL.FREQUENCY[a] for a in ChEMBL.ATOMS]
+        total = sum(freq_lst)
+        weight = total / (len(freq_lst) * torch.tensor(freq_lst, dtype=torch.float32))
+        return weight

@@ -8,6 +8,7 @@ import torch
 import torch.optim as optim
 import tqdm
 import itertools
+import shutil
 
 from option import arg_parse
 import dataset
@@ -18,6 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from utils.stat import AverageMeter
 from utils.transforms import MaskAtomType
+from sklearn.metrics import precision_score
 
 from warnings import simplefilter
 from sklearn.exceptions import UndefinedMetricWarning
@@ -29,13 +31,18 @@ class Trainer:
     def __init__(self, args):
         self.args = args
         assert args.split_index_folder is not None
-        train_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split_index_folder=args.split_index_folder,
-                                                            split='train', cycle_feat=args.use_cycle_feat,
-                                                            degree_feat=args.use_degree_feat,
-                                                            transform=MaskAtomType(args.mask_ratio))
+        dataset_class = dataset.get_dataset_class(args.dataset)
+        dataset_args = {'data_root': args.data_root, 'split_index_folder': args.split_index_folder,
+                        'cycle_feat': args.use_cycle_feat, 'degree_feat': args.use_degree_feat,
+                        'transform': MaskAtomType(args.mask_ratio,
+                                                  weight=dataset_class.compute_cls_weight()
+                                                  if args.weighted_sample_mask else None)}
+        train_set = dataset_class(split='train', **dataset_args)
+        val_set = dataset_class(split='val', **dataset_args)
 
-        self.train_loader = DataLoader(train_set, batch_size=args.batch_size,
-                                      num_workers=args.num_workers, pin_memory=True)
+        dataloader_args = {'batch_size': args.batch_size, 'num_workers': args.num_workers, 'pin_memory': True}
+        self.train_loader = DataLoader(train_set, **dataloader_args)
+        self.val_loader = DataLoader(val_set, **dataloader_args)
 
         self.model = DSGPM(args.num_atoms, args.hidden_dim,
                       args.output_dim, args=args).cuda()
@@ -45,7 +52,7 @@ class Trainer:
         if self.args.use_degree_feat:
             final_feat_dim += 1
         self.atom_type_classifier = torch.nn.Linear(final_feat_dim, args.num_atoms).cuda()
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = torch.nn.CrossEntropyLoss(weight=dataset_class.compute_cls_weight() if args.weighted_ce else None)
 
         # setup optimizer
         self.optimizer = optim.Adam(itertools.chain(self.model.parameters(),
@@ -66,6 +73,8 @@ class Trainer:
 
                 self.writer = SummaryWriter(tensorboard_dir)
 
+        self.best_acc = -1
+
     def train(self, epoch):
         self.model.train()
         loss_meter = AverageMeter()
@@ -85,8 +94,10 @@ class Trainer:
             loss.backward()
             self.optimizer.step()
 
-            accuracy = float(torch.sum(torch.max(pred.detach(), dim=1)[1] == data.masked_atom_type).cpu().item()) / len(pred)
             loss_meter.update(loss.item())
+            accuracy = precision_score(data.masked_atom_type.cpu().numpy(),
+                                       torch.max(pred.detach(), dim=1)[1].cpu().numpy(),
+                                       labels=range(self.args.num_atoms), average='macro')
             accuracy_meter.update(accuracy)
 
             tbar.set_description('[%d/%d] loss: %.4f, accuracy: %.4f'
@@ -94,22 +105,63 @@ class Trainer:
 
         if not self.args.debug and self.args.tb_log:
             self.writer.add_scalar('loss', loss_meter.avg, epoch)
-            self.writer.add_scalar('accuracy', accuracy_meter.avg, epoch)
+            self.writer.add_scalar('train_accuracy', accuracy_meter.avg, epoch)
 
         if not self.args.debug:
             state_dict = self.model.module.state_dict() if not isinstance(self.model, DSGPM) else self.model.state_dict()
             torch.save(state_dict, os.path.join(self.ckpt_dir, '{}.pth'.format(epoch)))
+
+    def eval(self, epoch):
+        is_best = False
+        self.model.eval()
+        accuracy_meter = AverageMeter()
+
+        val_loader = iter(self.val_loader)
+        tbar = tqdm.tqdm(enumerate(val_loader), total=len(self.val_loader), dynamic_ncols=True)
+        for i, data in tbar:
+            data = data.to(torch.device(0))
+
+            fg_embed = self.model(data)
+            pred = self.atom_type_classifier(fg_embed[data.masked_atom_index])
+
+            # accuracy = float(torch.sum(torch.max(pred.detach(), dim=1)[1] == data.masked_atom_type).cpu().item()) / len(pred)
+
+            # use macro to compute unweighted average of precision per class
+            accuracy = precision_score(data.masked_atom_type.cpu().numpy(), torch.max(pred.detach(), dim=1)[1].cpu().numpy(),
+                                       labels=range(self.args.num_atoms), average='macro')
+            accuracy_meter.update(accuracy)
+
+            tbar.set_description('[%d/%d] accuracy: %.4f'
+                                 % (epoch, self.args.epoch, accuracy_meter.avg))
+
+        if not self.args.debug and self.args.tb_log:
+            self.writer.add_scalar('val_accuracy', accuracy_meter.avg, epoch)
+
+        if accuracy_meter.avg > self.best_acc:
+            is_best = True
+            self.best_acc = accuracy_meter.avg
+
+        if not self.args.debug:
+            state_dict = self.model.module.state_dict() if not isinstance(self.model, DSGPM) else self.model.state_dict()
+            ckpt_fpath = os.path.join(self.ckpt_dir, '{}.pth'.format(epoch))
+            torch.save(state_dict, ckpt_fpath)
+            if is_best:
+                shutil.copyfile(ckpt_fpath, os.path.join(self.ckpt_dir, 'best.pth'))
 
 
 def main():
     args = arg_parse()
     args.use_mask_embed = True
     assert args.ckpt is not None, '--ckpt is required'
+
     args.devices = [int(device_id) for device_id in args.devices.split(',')]
 
     trainer = Trainer(args)
+
     for e in range(1, args.epoch + 1):
         trainer.train(e)
+        with torch.no_grad():
+            trainer.eval(e)
 
 
 if __name__ == '__main__':
