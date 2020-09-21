@@ -21,12 +21,18 @@ if __name__ == '__main__':
 
     len_per_element = [len(l) for l in dict_element_to_fname_lst.values()]
 
+    SAMPLE_RATIO = 0.05
+
     print('splitting...')
     split_dict = {'train': {}, 'val': {}, 'test': {}}
 
     for element_name, fname_lst in tqdm(dict_element_to_fname_lst.items(), dynamic_ncols=True):
         random.shuffle(fname_lst)
         len_fname_lst = len(fname_lst)
+        if len_fname_lst >= 1000:
+            sample_len = max(math.ceil(SAMPLE_RATIO * len_fname_lst), 3)
+            fname_lst = fname_lst[:sample_len]
+            len_fname_lst = len(fname_lst)
         end_test_idx = math.ceil(len_fname_lst * TEST_RATIO)
         end_val_idx = end_test_idx + math.ceil(len_fname_lst * VAL_RATIO)
 
@@ -48,6 +54,8 @@ if __name__ == '__main__':
         element_to_fname_lst_split = split_dict[split_name]
         split_lst = list(itertools.chain(*element_to_fname_lst_split.values()))
         output_fpath = os.path.join(output_dir, '{}.txt'.format(split_name))
+        if os.path.exists(output_fpath):
+            os.remove(output_fpath)
         with open(output_fpath, 'w+') as f:
             for fname in split_lst:
                 f.write('{}\n'.format(fname))
