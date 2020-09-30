@@ -3,6 +3,7 @@
 #  Written by Zhiheng Li
 #  Email: zhiheng.li@rochester.edu
 
+import os
 import argparse
 import random
 import numpy as np
@@ -70,6 +71,8 @@ def arg_parse():
     parser.add_argument('--device_for_affinity_matrix', type=str, choices=['cpu', 'cuda'], default='cuda')
     parser.add_argument('--weighted_ce', action='store_true')
     parser.add_argument('--weighted_sample_mask', action='store_true')
+    parser.add_argument('--sample_ratio', type=float, default=0.05)
+    parser.add_argument('--no_save_ckpt', action='store_true')
 
     parser.set_defaults(cuda='0',
                         lr=1e-3,
@@ -90,5 +93,8 @@ def arg_parse():
         torch.manual_seed(args.seed)
         np.random.seed(args.seed)
         random.seed(args.seed)
+
+    if args.pretrained_ckpt is not None:
+        assert os.path.exists(args.pretrained_ckpt)
 
     return args

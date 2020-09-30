@@ -24,12 +24,12 @@ class ChEMBL(Dataset):
     FREQUENCY = {'C': 39563488, 'N': 6113034, 'O': 6278194, 'S': 711604, 'Cl': 406332, 'F': 700548, 'Br': 84706, 'P': 40590,
                  'Se': 2290, 'B': 3374, 'I': 12108, 'Si': 3269, 'Te': 103, 'As': 205, 'Zn': 4, 'Al': 12}
 
-    def __init__(self, data_root, split_index_folder, split='train', for_vis=False, cycle_feat=False, degree_feat=False, transform=None):
+    def __init__(self, data_root, split_index_folder, sample_ratio=0.05, split='train', for_vis=False, cycle_feat=False, degree_feat=False, transform=None):
         assert split in {'train', 'val', 'test'}
         self.split = split
         self.transform = transform
-        split_file = os.path.join(split_index_folder, '{}.txt'.format(split))
-        assert os.path.exists(split_file)
+        split_file = os.path.join(split_index_folder, '{}_sample_ratio_{}.txt'.format(split, sample_ratio))
+        assert os.path.exists(split_file), split_file
         with open(split_file) as f:
             json_fname_lst = f.readlines()
         json_fname_lst = [line.strip() for line in json_fname_lst]

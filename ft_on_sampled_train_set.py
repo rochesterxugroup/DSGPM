@@ -3,12 +3,18 @@
 #  Written by Zhiheng Li
 #  Email: zhiheng.li@rochester.edu
 
+#  Copyright (c) 2020
+#  Licensed under The MIT License
+#  Written by Zhiheng Li
+#  Email: zhiheng.li@rochester.edu
+
 import os
 import torch
 import torch.optim as optim
 import random
 import tqdm
 import dataset
+import math
 
 from option import arg_parse
 from torch_geometric.data import DataLoader, DataListLoader
@@ -117,12 +123,14 @@ def eval(fold, epoch, test_dataloader, model, args):
 
 
 def main():
+    HAM_ATOM_INDEX_IN_CHEMBL = [0, 1, 2, 3, 4, 6, 7, 8, 9, -1, -1, 12, 13, -1, -1, 15]
     args = arg_parse()
     assert args.ckpt is not None, '--ckpt is required'
+    assert args.pretrained_ckpt is not None, '--pretrained_ckpt is required'
     args.devices = [int(device_id) for device_id in args.devices.split(',')]
 
-    train_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split='train', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=True)
-    test_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split='test', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=True)
+    train_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split='train', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=not args.debug)
+    test_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split='test', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=not args.debug)
     assert len(train_set) == len(test_set)
 
     indices = list(range(len(train_set)))
@@ -139,6 +147,10 @@ def main():
         test_indices = indices[idx_fold * test_set_len : (idx_fold + 1) * test_set_len]
         train_indices = list(set(indices) - set(test_indices))
 
+        # sample training set
+        random.shuffle(train_indices)
+        train_indices = train_indices[:math.ceil(args.sample_ratio * len(train_indices))]
+
         train_sampler = SubsetRandomSampler(train_indices)
         test_sampler = SubsetRandomSampler(test_indices)
 
@@ -149,6 +161,17 @@ def main():
 
         model = DSGPM(args.num_atoms, args.hidden_dim,
                       args.output_dim, args=args).cuda()
+
+        ckpt = torch.load(args.pretrained_ckpt)
+        atom_embeddings = ckpt['input_fc.weight'][1:]
+        del ckpt['input_fc.weight']
+        model.load_state_dict(ckpt, strict=False)
+        # load atom embeddings
+        with torch.no_grad():
+            for index_in_ham, index_in_ChEMBL in enumerate(HAM_ATOM_INDEX_IN_CHEMBL):
+                if index_in_ChEMBL == -1:
+                    continue
+                model.input_fc.weight[index_in_ham].copy_(atom_embeddings[index_in_ChEMBL])
 
         pos_pair_mse_criterion = PosPairMSE().cuda()
         triplet_criterion = TripletLoss(args.margin).cuda()
@@ -196,7 +219,7 @@ def main():
                     writer.add_scalar('test_edge_cut_recall', test_edge_cut_recall, e)
                     writer.add_scalar('test_edge_cut_f_score', test_edge_cut_f_score, e)
 
-                if not args.debug:
+                if not args.debug and not args.no_save_ckpt:
                     state_dict = model.module.state_dict() if not isinstance(model, DSGPM) else model.state_dict()
                     torch.save(state_dict, os.path.join(ckpt_dir, 'fold_{}_{}.pth'.format(idx_fold+1, e)))
 

@@ -14,7 +14,7 @@ from option import arg_parse
 import dataset
 from torch_geometric.data import DataLoader
 from model.networks import DSGPM
-from utils.util import get_run_name
+from utils.util import get_run_name, save_args
 from torch.utils.tensorboard import SummaryWriter
 
 from utils.stat import AverageMeter
@@ -30,13 +30,31 @@ simplefilter(action='ignore', category=UndefinedMetricWarning)
 class Trainer:
     def __init__(self, args):
         self.args = args
+
+        if not args.debug:
+            run_name = get_run_name(args.title)
+
+            self.ckpt_dir = os.path.join(args.ckpt, run_name)
+            if not os.path.exists(self.ckpt_dir):
+                os.makedirs(self.ckpt_dir)
+
+            save_args(args, self.ckpt_dir)
+
+            if args.tb_log:
+                tensorboard_dir = os.path.join(args.tb_root, run_name)
+                if not os.path.exists(tensorboard_dir):
+                    os.mkdir(tensorboard_dir)
+
+                self.writer = SummaryWriter(tensorboard_dir)
+
         assert args.split_index_folder is not None
         dataset_class = dataset.get_dataset_class(args.dataset)
         dataset_args = {'data_root': args.data_root, 'split_index_folder': args.split_index_folder,
                         'cycle_feat': args.use_cycle_feat, 'degree_feat': args.use_degree_feat,
                         'transform': MaskAtomType(args.mask_ratio,
                                                   weight=dataset_class.compute_cls_weight()
-                                                  if args.weighted_sample_mask else None)}
+                                                  if args.weighted_sample_mask else None),
+                        'sample_ratio': args.sample_ratio}
         train_set = dataset_class(split='train', **dataset_args)
         val_set = dataset_class(split='val', **dataset_args)
 
@@ -58,20 +76,6 @@ class Trainer:
         self.optimizer = optim.Adam(itertools.chain(self.model.parameters(),
                                                     self.atom_type_classifier.parameters()),
                                     lr=args.lr, weight_decay=args.weight_decay)
-
-        if not args.debug:
-            run_name = get_run_name(args.title)
-
-            self.ckpt_dir = os.path.join(args.ckpt, run_name)
-            if not os.path.exists(self.ckpt_dir):
-                os.makedirs(self.ckpt_dir)
-
-            if args.tb_log:
-                tensorboard_dir = os.path.join(args.tb_root, run_name)
-                if not os.path.exists(tensorboard_dir):
-                    os.mkdir(tensorboard_dir)
-
-                self.writer = SummaryWriter(tensorboard_dir)
 
         self.best_acc = -1
 
