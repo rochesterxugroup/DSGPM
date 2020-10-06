@@ -90,8 +90,6 @@ def eval(fold, epoch, test_dataloader, model, args):
         max_num_cg_beads = gt_hard_assigns.max(axis=1) + 1
 
         fg_embed = model(data)
-        dense_adj = torch.sparse.LongTensor(data.edge_index, data.no_bond_edge_attr, (num_nodes, num_nodes)).to_dense()
-
         for _ in range(args.test_shots):
             best_adjusted_mutual_info, \
             best_precision, best_recall, best_f_score = -1, 0, 0, 0

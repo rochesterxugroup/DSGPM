@@ -1,0 +1,11 @@
+CUDA_VISIBLE_DEVICES=0 PYTHONPATH='.':$PYTHONPATH python train.py \
+  --seed 0 \
+  --dataset HAM \
+  --title force_feat \
+  --data_root /scratch/zli82/dataset/HAM_public/data \
+  --batch_size 100 \
+  --num_workers 20 \
+  --ckpt /scratch/zli82/cg_exp/ckpt/force_feat \
+  --tb_root /scratch/zli82/cg_exp/tensorboard/force_feat \
+  --tb_log \
+  --use_force_feat

@@ -73,6 +73,9 @@ def arg_parse():
     parser.add_argument('--weighted_sample_mask', action='store_true')
     parser.add_argument('--sample_ratio', type=float, default=0.05)
     parser.add_argument('--no_save_ckpt', action='store_true')
+    parser.add_argument('--ckpt_suffix', type=str)
+    parser.add_argument('--per_element_save_dir', type=str)
+    parser.add_argument('--use_force_feat', action='store_true')
 
     parser.set_defaults(cuda='0',
                         lr=1e-3,

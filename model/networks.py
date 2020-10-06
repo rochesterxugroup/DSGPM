@@ -33,6 +33,8 @@ class DSGPM(nn.Module):
             hidden_dim += 1
         if self.args.use_cycle_feat:
             hidden_dim += 1
+        if self.args.use_force_feat:
+            hidden_dim += 3
         edge_nn = nn.Sequential(
             nn.Linear(4, 128),
             nn.ReLU(),

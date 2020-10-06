@@ -121,8 +121,8 @@ def main():
     assert args.ckpt is not None, '--ckpt is required'
     args.devices = [int(device_id) for device_id in args.devices.split(',')]
 
-    train_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split='train', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=True)
-    test_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split='test', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=True)
+    train_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split='train', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=not args.debug, use_force_feat=args.use_force_feat)
+    test_set = dataset.get_dataset_class(args.dataset)(data_root=args.data_root, split='test', cycle_feat=args.use_cycle_feat, degree_feat=args.use_degree_feat, cross_validation=True, automorphism=not args.debug, use_force_feat=args.use_force_feat)
     assert len(train_set) == len(test_set)
 
     indices = list(range(len(train_set)))

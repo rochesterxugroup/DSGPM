@@ -62,16 +62,47 @@ class FoldEpochMat:
         for key, val in key_val_dict.items():
             self.key_to_mat_dict[key][fold, epoch] = val
 
-    def result(self, fold):
+    def result(self, fold, epoch=None):
         fold += 1
-        criterion = sum([self.key_to_mat_dict[key][:fold].mean(axis=0) for key in self.best_result_keys])
-        best_epoch = criterion.argmax()
+        if epoch is None:
+            criterion = sum([self.key_to_mat_dict[key][:fold].mean(axis=0) for key in self.best_result_keys])
+            best_epoch = criterion.argmax()
+            epoch = best_epoch
 
         mean_ret = {}
         std_ret = {}
         for key, mat in self.key_to_mat_dict.items():
-            colomn = mat[:fold, best_epoch]
+            colomn = mat[:fold, epoch]
             mean_ret[key] = colomn.mean()
             std_ret[key] = colomn.std()
 
-        return mean_ret, std_ret, best_epoch + 1
+        return mean_ret, std_ret, epoch + 1
+
+
+class FoldElementMat:
+    def __init__(self, num_fold, element_lst, *keys):
+        self.element_lst = element_lst
+        self.key_to_sum_mat_dict = {}
+        for k in keys:
+            self.key_to_sum_mat_dict[k] = np.zeros((num_fold, len(element_lst)))
+        self.count_mat = np.zeros((num_fold, len(element_lst)), dtype=np.int32)
+
+    def update(self, fold, element_type, key_val_dict: dict):
+        for key, val in key_val_dict.items():
+            self.key_to_sum_mat_dict[key][fold, element_type] += val
+        self.count_mat[fold, element_type] += 1
+
+    def result(self):
+        ret = {}
+        for idx_element, element in enumerate(self.element_lst):
+            count_vec = self.count_mat[:, idx_element]
+            mean_ret = {}
+            std_ret = {}
+            for metric_name, mat in self.key_to_sum_mat_dict.items():
+                colomn = mat[:, idx_element][count_vec > 0]
+                colomn /= count_vec[count_vec > 0]
+                mean_ret[metric_name] = colomn.mean()
+                std_ret[metric_name] = colomn.std()
+            ret[element] = {'mean': mean_ret, 'std': std_ret}
+
+        return ret

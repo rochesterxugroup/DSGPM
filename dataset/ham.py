@@ -26,8 +26,9 @@ from . import BOND_TYPE_DICT
 
 class HAM(Dataset):
     ATOMS = ['B', 'C', 'N', 'O', 'F', 'Si', 'P', 'S', 'Cl', 'K', 'Fe', 'Se', 'Br', 'Ru', 'Sn', 'I']
+    ELEMENT_FREQUENCY = torch.tensor([17, 22150, 4418, 3930, 352, 36, 20, 407, 296, 2, 1, 5, 172, 2, 2, 53])
 
-    def __init__(self, data_root, split='train', for_vis=False, cycle_feat=False, degree_feat=False, cross_validation=False, automorphism=True, transform=None):
+    def __init__(self, data_root, split='train', for_vis=False, cycle_feat=False, degree_feat=False, cross_validation=False, automorphism=True, transform=None, add_graph_label=False, use_force_feat=False):
         assert split in {'train', 'test'}
         self.split = split
         self.transform = transform
@@ -39,8 +40,9 @@ class HAM(Dataset):
         self.for_vis = for_vis
         self.cycle_feat = cycle_feat
         self.degree_feat = degree_feat
-
+        self.add_graph_label = add_graph_label
         self.smiles_cluster_idx_dict = {}
+        self.smiles_force_dict = {}
         self.smiles_json_fpath_lst = OrderedDict()
         for json_fpath in self.json_file_path_lst:
             with open(json_fpath) as f:
@@ -50,6 +52,18 @@ class HAM(Dataset):
                 else:
                     smiles = json_data['smiles']
                 smiles = smiles.replace('/', '\\')
+
+                if use_force_feat:
+                    fname_splits = os.path.basename(json_fpath).split('.')
+                    prefix = '{}.{}'.format(fname_splits[0], fname_splits[-2])
+                    force_files = glob.glob('/scratch/zli82/dataset/HAM_public/data/3D_forces/{}*.pt'.format(prefix))
+                    assert len(force_files) == 1
+                    force_file = force_files[0]
+                    force = torch.load(force_file, map_location=torch.device('cpu'))['Forces']
+                    if smiles not in self.smiles_force_dict:
+                        self.smiles_force_dict[smiles] = []
+                    self.smiles_force_dict[smiles].append(force)
+
                 if smiles not in self.smiles_cluster_idx_dict:
                     self.smiles_cluster_idx_dict[smiles] = []
                 cluster_idx = self.compute_cluster_idx(json_data)
@@ -88,6 +102,8 @@ class HAM(Dataset):
                         new_mapping[:, key_value_lst[0]] = new_mapping[:, key_value_lst[1]]
                         mapping_lst.append(new_mapping)
                 self.smiles_cluster_idx_dict[smile] = mapping_lst
+
+        self.use_force_feat = use_force_feat
 
     def __getitem__(self, index):
         """
@@ -146,6 +162,15 @@ class HAM(Dataset):
         atom_types = torch.LongTensor([HAM.ATOMS.index(bead['element']) for bead in fg_beads]).reshape(-1, 1)
         data.x = atom_types
 
+        # add graph level label based on element with least frequency in the dataset
+        if self.add_graph_label:
+            frequency_in_graph = self.ELEMENT_FREQUENCY[atom_types.flatten()]
+            least_frequency = frequency_in_graph.min()
+            least_frequency_atom_ids = (frequency_in_graph == least_frequency).nonzero(as_tuple=False)
+            sampled_atom_id = least_frequency_atom_ids[random.randrange(len(least_frequency_atom_ids))]
+            graph_label = atom_types[sampled_atom_id]
+            data.graph_label = graph_label
+
         # ======== degree ===========
         if self.degree_feat:
             degrees = graph.degree
@@ -165,6 +190,17 @@ class HAM(Dataset):
                 data.degree_or_cycle_feat = torch.cat([data.degree_or_cycle_feat, cycle_indicator_per_node], dim=1)
             else:
                 data.degree_or_cycle_feat = cycle_indicator_per_node
+
+        # force
+        if self.use_force_feat:
+            multi_forces = self.smiles_force_dict[smiles]
+            rand_anno_idx = random.randrange(len(multi_forces))
+            force = multi_forces[rand_anno_idx]
+            if hasattr(data, 'degree_or_cycle_feat'):
+                assert data.degree_or_cycle_feat.shape[0] == force.shape[0], json_fpath
+                data.degree_or_cycle_feat = torch.cat([data.degree_or_cycle_feat, force], dim=1)
+            else:
+                data.degree_or_cycle_feat = force
 
         edges = []
         bond_types = []
