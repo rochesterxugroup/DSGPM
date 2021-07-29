@@ -66,6 +66,9 @@ To generate coarse-grained mapping (graph partitioning of molecular graph), plea
      --no_automorphism # (optional) add this flag to turn off computing automorphism of the molecular graph, which is time-comsuming when it comes to large ones.
    ```
 
+## Colab
+
+To predict CG mappings without downloading DSGPM, [use this colab](https://colab.research.google.com/github/ur-whitelab/nmrgnn/blob/master/colab/NMRPredictor.ipynb)
 
 
 ## Visualization
