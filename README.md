@@ -68,7 +68,7 @@ To generate coarse-grained mapping (graph partitioning of molecular graph), plea
 
 ## Colab
 
-To predict CG mappings without downloading DSGPM, [use this colab](https://colab.research.google.com/github/ur-whitelab/nmrgnn/blob/master/colab/NMRPredictor.ipynb)
+To predict CG mappings without downloading DSGPM, [use this colab](https://colab.research.google.com/github/rochesterxugroup/DSGPM/blob/master/colab/DSGPM.ipynb)
 
 
 ## Visualization
