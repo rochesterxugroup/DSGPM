@@ -8,7 +8,7 @@ import tqdm
 import numpy as np
 import os
 import json
-import metis
+#import metis
 import copy
 
 from dataset.ham_per_file import HAMPerFile
