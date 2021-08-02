@@ -1,6 +1,10 @@
 cff-version: 1.1.0
 message: "If you use this software, please cite it as below."
 authors:
+  - affiliation: "University of Rochester"
+    family-names: Li
+    given-names: Zhiheng
+    orcid: https://orcid.org/0000-0002-5972-4826
   - family-names: Druskat
     given-names: Stephan
     orcid: https://orcid.org/0000-0003-4925-7248
