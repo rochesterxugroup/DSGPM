@@ -1,13 +1,13 @@
 cff-version: 1.1.0
 message: "If you use this software, please cite it as below."
 references:
-  - type: "article"
-    title: "Graph neural network based coarse-grained mapping prediction"
-    journal: "Chem. Sci."
+  - type: article
+    title: Graph neural network based coarse-grained mapping prediction
+    journal: Chem. Sci.
     issue: 35
     volume: 11
     pages: 9524-9531
-    doi: "doi: 10.1039/D0SC02458A"
+    doi: 10.1039/D0SC02458A
     date-published: 2020-08-11
     
     publisher:
