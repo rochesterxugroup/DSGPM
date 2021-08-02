@@ -35,10 +35,11 @@ version: 1.0.0
 date-released: 2020-08-11
 references:
   - type: article
-  - journal: "Chem. Sci."
-  - publisher: "The Royal Society of Chemistry"
-  - volume: 11
-  - issue: 35
+    journal: "Chem. Sci."
+    publisher:
+      - name: The Royal Society of Chemistry
+    volume: 11
+    issue: 35
   
 
   
