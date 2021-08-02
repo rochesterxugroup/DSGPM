@@ -32,5 +32,11 @@ authors:
     
 title: "Graph neural network based coarse-grained mapping prediction"
 version: 1.0.0
+journal: "Chem. Sci."
+volume: 11
+issue: 35
+pages: 9524-9531
+publisher: "The Royal Society of Chemistry"
 doi: 10.1039/D0SC02458A
+url: http://dx.doi.org/10.1039/D0SC02458A
 date-released: 2020-08-11
