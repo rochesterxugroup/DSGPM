@@ -35,6 +35,10 @@ title: Graph neural network based coarse-grained mapping prediction
 doi: 10.1039/D0SC02458A
 version: 1.0.0
 date-released: 2020-08-11
+references:
+  - type: article
+  - journal: "Chemical Science"
+    
   
 
   
