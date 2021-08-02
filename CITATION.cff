@@ -1,19 +1,16 @@
-cff-version: 1.1.0
+cff-version: 1.0.3
 message: "If you use this software, please cite it as below."
-references:
+references: 
   - type: article
-    title: Graph neural network based coarse-grained mapping prediction
-    journal: Chem. Sci.
+    title: "Graph neural network based coarse-grained mapping prediction"
+    journal: "Chem. Sci."
     issue: 35
     volume: 11
-    pages: 9524-9531
     doi: 10.1039/D0SC02458A
     date-published: 2020-08-11
-    
     publisher:
       - name: The Royal Society of Chemistry
-    
-    authors:
+    authors: 
       - affiliation: "University of Rochester"
         family-names: Li
         given-names: Zhiheng
