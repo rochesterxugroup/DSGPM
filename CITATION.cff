@@ -1,31 +1,10 @@
-
 cff-version: 1.1.0
 message: "If you use this software, please cite it as below."
 authors:
-  - affiliation: "University of Rochester"
-    family-names: Li
-    given-names: Zhiheng
-    orcid: "https://orcid.org/0000-0002-5972-4826"
-    
-  - affiliation: "University of Rochester"
-    family-names: Wellawatte
-    given-names: "Geemi P."
-    orcid: "https://orcid.org/0000-0002-3772-6927"
-    
-  - affiliation: "University of Rochester"
-    family-names: Chakraborty
-    given-names: Maghesree
-    
-  - affiliation: "University of Rochester"
-    family-names: Gandhi
-    given-names: "Heta A."
-    orcid: "https://orcid.org/0000-0002-9465-3840"
-  
-  - affiliation: "University of Rochester"
-    family-names: Xu
-    given-names: Chenliang
-    
-  - affiliation: "University of Rochester"
-    family-names: White
-    given-names: "Andrew D."
-    orcid: "https://orcid.org/0000-0002-6647-3965"
+  - family-names: Druskat
+    given-names: Stephan
+    orcid: https://orcid.org/0000-0003-4925-7248
+title: "My Research Software"
+version: 2.0.4
+doi: 10.5281/zenodo.1234
+date-released: 2017-12-18
