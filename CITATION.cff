@@ -1,42 +1,49 @@
 cff-version: 1.1.0
 message: "If you use this software, please cite it as below."
-authors:
-  - affiliation: "University of Rochester"
-    family-names: Li
-    given-names: Zhiheng
-    orcid: https://orcid.org/0000-0002-5972-4826
+references:
+  - type: "article"
+    title: "Graph neural network based coarse-grained mapping prediction"
+    journal: "Chem. Sci."
+    issue: 35
+    volume: 11
+    pages: 9524-9531
+    doi: "doi: 10.1039/D0SC02458A"
+    date-published: 2020-08-11
     
-  - affiliation: "University of Rochester"
-    family-names: Wellawatte
-    given-names: Geemi P.
-    orcid: https://orcid.org/0000-0002-3772-6927
+    publisher:
+      - name: The Royal Society of Chemistry
     
-  - affiliation: "University of Rochester"
-    family-names: Chakraborty
-    given-names: Maghesree
-    orcid: https://orcid.org/0000-0001-5706-3027
-    
-  - affiliation: "University of Rochester"
-    family-names: Gandhi
-    given-names: Heta A.
-    orcid: https://orcid.org/0000-0002-9465-3840 
-    
-  - affiliation: "University of Rochester"
-    family-names: Xu
-    given-names: Chenliang
-    
-  - affiliation: "University of Rochester"
-    family-names: White
-    given-names: Andrew D.
-    orcid: https://orcid.org/0000-0002-6647-3965
-    
-title: "Graph neural network based coarse-grained mapping prediction"
-version: 1.0.0
-journal: "Chem. Sci."
-volume: 11
-issue: 35
-pages: 9524-9531
-publisher: "The Royal Society of Chemistry"
-doi: 10.1039/D0SC02458A
-url: http://dx.doi.org/10.1039/D0SC02458A
-date-released: 2020-08-11
+    authors:
+      - affiliation: "University of Rochester"
+        family-names: Li
+        given-names: Zhiheng
+        orcid: https://orcid.org/0000-0002-5972-4826
+        
+      - affiliation: "University of Rochester"
+        family-names: Wellawatte
+        given-names: Geemi P.
+        orcid: https://orcid.org/0000-0002-3772-6927
+        
+      - affiliation: "University of Rochester"
+        family-names: Chakraborty
+        given-names: Maghesree
+        orcid: https://orcid.org/0000-0001-5706-3027
+        
+      - affiliation: "University of Rochester"
+        family-names: Gandhi
+        given-names: Heta A.
+        orcid: https://orcid.org/0000-0002-9465-3840 
+        
+      - affiliation: "University of Rochester"
+        family-names: Xu
+        given-names: Chenliang
+        
+      - affiliation: "University of Rochester"
+        family-names: White
+        given-names: Andrew D.
+        orcid: https://orcid.org/0000-0002-6647-3965
+
+
+
+
+
