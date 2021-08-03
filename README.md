@@ -1,4 +1,6 @@
 # Graph Neural Network Based Coarse-Grained Mapping Prediction
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rochesterxugroup/DSGPM/blob/master/colab/DSGPM.ipynb)
+
 ![abs_graphic](fig/abs_graphic.png)
 
 This is a PyTorch implementation of *Deep Supervised Graph Partitioning Model (DSGPM)* described in paper *Graph Neural Network Based Coarse-Grained Mapping Prediction*.
